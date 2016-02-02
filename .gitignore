@@ -39,4 +39,4 @@ ehthumbs.db
 Thumbs.db
 
 ./output/IOManangerVariables.hpp
-#./output_s/IOMananger_Local.cpp
+./output_s/IOMananger_Local.cpp
