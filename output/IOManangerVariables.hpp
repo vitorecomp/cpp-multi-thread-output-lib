@@ -1,5 +1,12 @@
 //start configs
-unsigned int num_actions_routers;
-unsigned int num_http_routers;
+string metric;
+string inicial_method;
+string dist_method;
+
+//folders
+string videofolder;
+string gt_name;
+
+string output_folder;
 
 //neuron

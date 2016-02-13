@@ -1,4 +1,4 @@
-#include "../../headers/output/Entities.hpp"
+#include "../output/Entities.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //MessageBox
@@ -146,13 +146,12 @@ void ProgressBar::print(Message &msg){
     double value = std::stod(msg.msg);
     if(value > max){
         value = max;
-        #warning Error de max, loggar isso
     }
 
     if(value < min){
         value = min;
-        #warning Error de min, loggar isso
     }
+    
     double percentage = (value - min)/( max - min);
     printHorizontalGraph(percentage * 100);
 }

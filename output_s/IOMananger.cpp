@@ -1,4 +1,4 @@
-#include "../../headers/output/IOMananger.hpp"
+#include "../output/IOMananger.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //Configs
@@ -91,6 +91,7 @@ void Configs::waitEnd(){
 ///////////////////////////////////////////////////////////////////////////////
 Output io::output;
 
+string Output::module_name = "output_module";
 void run_io(){
     io::configs.waitEnd();
     bool empty = false;
@@ -203,6 +204,10 @@ Input::Input(){
     ended = false;
 }
 
+void Input::start(){
+    this->endSignal();
+}
+
 void Input::endSignal(){
     end_mutex.lock();
     ended = true;
@@ -228,6 +233,7 @@ bool Input::isEnded(){
 ///////////////////////////////////////////////////////////////////////////////
 Logger io::logger;
 
+string Logger::module_name = "logger_module";
 
 Logger::Logger(){
     this->ended = false;
@@ -241,8 +247,6 @@ Logger::~Logger(){
 }
 
 void Logger::start(){
-    Output::setSize(io::configs.windows_cols, io::configs.windows_lines);
-    Figure::clearAll();
     makeMap();
     this->endSignal();
 }
@@ -276,7 +280,7 @@ bool Logger::run(){
         this->screen[message.box]->print(message);
     }else{
         stringstream ss;
-        ss << "Mapa de screen não encontrado: " << message.box;
+        ss << "Mapa de logger não encontrado: " << message.box;
         io::logger.log(module_name, Logger::ERROR, ss.str());
     }
     return false;

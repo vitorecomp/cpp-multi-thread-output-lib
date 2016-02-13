@@ -1,4 +1,4 @@
-#include "../../headers/output/BaseTypes.hpp"
+#include "../output/BaseTypes.hpp"
 
 Message::Message(uint line, uint col, string box, string msg){
     this->line = line;

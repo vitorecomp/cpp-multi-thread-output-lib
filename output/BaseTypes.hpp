@@ -22,6 +22,8 @@ public:
 };
 
 class Screen{
+protected:
+    string module_name;
 public:
     virtual void print(Message&) = 0;
 };

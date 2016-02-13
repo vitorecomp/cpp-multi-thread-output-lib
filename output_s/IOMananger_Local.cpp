@@ -1,4 +1,4 @@
-#include "../../headers/output/IOMananger.hpp"
+#include "../output/IOMananger.hpp"
 
 //Start screen
 void Output::makeMap(){
@@ -72,4 +72,9 @@ void Configs::decodeMap(){
 
     threads = 16;
     */
+}
+
+//Logger make Map
+void Logger::makeMap(){
+    
 }
