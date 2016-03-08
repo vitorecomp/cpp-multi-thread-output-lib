@@ -7,6 +7,9 @@
 #include <list>
 #include <cmath>
 #include <iomanip>
+#include <stdexcept>
+#include <algorithm>
+#include <string>
 
 //files
 #include "BaseTypes.hpp"

@@ -60,7 +60,7 @@ void Configs::setConfigs(){
     if(json["windows_cols"] != Json::nullValue)
         this->windows_cols = json["windows_cols"].asInt();
     else
-        this->windows_cols = 40;
+        this->windows_cols = 140;
 
     if(json["windows_lines"] != Json::nullValue)
         this->windows_lines = json["windows_lines"].asInt();
@@ -205,7 +205,6 @@ Input::Input(){
 }
 
 void Input::start(){
-    this->endSignal();
 }
 
 void Input::endSignal(){

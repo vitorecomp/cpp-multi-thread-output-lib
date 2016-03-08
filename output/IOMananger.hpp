@@ -122,7 +122,7 @@ private:
     void makeMap();
     map<string, Screen*> screen;
 public:
-    enum Type {ERROR, INFO, WARNING};
+    enum Type {ERROR, INFO, WARNING, DEBUG};
     Logger();
     ~Logger();
 

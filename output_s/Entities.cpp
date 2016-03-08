@@ -25,14 +25,17 @@ MessageBox::MessageBox(string name, uint stx, uint sty, uint sx, uint sy, uint e
 void MessageBox::print(Message &msg){
     string value = msg.msg;
 
+    std::replace( value.begin(), value.end(), '\n', ' '); // replace all 'x' to 'y'
+
     if(value.size() <= (size_y-6))
         add_on_list(value);
     else{
+
         do{
             string value_inter = value.substr(0, size_y - 6);
-            add_on_list(value);
+            add_on_list(value_inter);
             value = value.substr(size_y - 6);
-        }while(value.size() <= size_y - 6);
+        }while(value.size() >= size_y - 6);
         add_on_list(value);
     }
     printlist();
@@ -151,7 +154,7 @@ void ProgressBar::print(Message &msg){
     if(value < min){
         value = min;
     }
-    
+
     double percentage = (value - min)/( max - min);
     printHorizontalGraph(percentage * 100);
 }

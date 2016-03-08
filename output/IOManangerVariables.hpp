@@ -1,12 +1,20 @@
 //start configs
-string metric;
-string inicial_method;
-string dist_method;
+unsigned int num_actions_routers;
+unsigned int num_http_routers;
 
-//folders
-string videofolder;
-string gt_name;
+//server
+std::string server_interface;
 
-string output_folder;
+//udp server
+uint udp_port;
+uint num_try_udp_get_connection;
+bool force_udp_connection;
 
-//neuron
+//tcp
+uint tcp_port;
+
+string high_ip;
+
+
+//database
+std::string database_name;
