@@ -1,150 +1,216 @@
 #ifndef IOMananger_H
 #define IOMananger_H
 
-//includes
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <mutex>
+// includes
+#include <chrono>
 #include <condition_variable>
+#include <fstream>
+#include <iostream>
+#include <mutex>
 #include <queue>
 #include <sstream>
+#include <thread>
 
-//files
-#include "../../libs/jsonParser/json.h"
+// files
+#include "../json_parser/json.h"
 #include "./BaseTypes.hpp"
+#include "./ContextVariables.hpp"
 #include "./Entities.hpp"
+// defines
 
-//defines
-
-//namespace
+// namespace
 using namespace std;
 
-class Configs{
-    std::mutex m_ended;
-    std::condition_variable s_ended;
-    bool ended;
-    bool ok;
+class Configs : public Variables {
+	std::mutex m_ended;
+	std::condition_variable s_ended;
+	bool ended;
+	bool ok;
 
-    void decodeMap();
-public:
-    Configs();
+	void decodeMap();
 
-    void openFile(const char*);
-    void setConfigs();
+  public:
+	Configs();
 
-    bool configOk();
-    string error_msg;
+	void openFile(const char*);
+	void runFile(const char*);
+	void setConfigs();
 
-    //variables
-    Json::Value json;
+	bool configOk();
+	string error_msg;
 
-    //variavles list
-    bool output;
+	// variables
+	Json::Value json;
 
-    //io
-    uint windows_cols;
-    uint windows_lines;
+	// variavles list
+	bool output;
 
+	// io
+	bool sync_output;
+	uint windows_cols;
+	uint windows_lines;
 
-    #include "./IOManangerVariables.hpp"
+	// parallel
+	uint threads;
 
-    //parallel
-    uint threads;
-
-    void endSignal();
-    void waitEnd();
+	void endSignal();
+	void waitEnd();
 };
 
-class Output{
-private:
-    static string module_name;
+class Output;
 
-    std::mutex m_ended;
-    std::condition_variable s_ended;
-    bool ended;
+class OutMessage {
+	string stream;
 
-    queue<Message> print_queue;
-    std::mutex queue_mutex;
-    thread *running_thread;
+  public:
+	Output* output;
+	OutMessage(Output*);
+	OutMessage(){};
+	~OutMessage();
 
-    void makeMap();
-    map<string, Screen*> screen;
-public:
-    Output();
-    ~Output();
-
-    bool run();
-    void start();
-    void waitSignal();
-    void runSignal();
-
-    void print(uint, uint, string, string);
-    void printMsgBox(string, string);
-    void printBarGraph(string, double);
-    void printValues(string, map<string, string>);
-
-    static void setSize(uint, uint);
-
-    void endSignal();
-    void waitEnd();
+	template <class A0>
+	void add(A0& os) {
+		stringstream ss;
+		ss << stream << os;
+		stream = ss.str();
+	}
 };
 
-class Input{
-private:
-    std::mutex end_mutex;
-    bool ended;
-public:
-    Input();
+typedef OutMessage Msg;
 
-    void start();
+class Output {
+  private:
+	static string module_name;
 
-    void waitEnter();
-    bool isEnded();
+	std::mutex m_ended;
+	std::condition_variable s_ended;
+	bool ended;
 
-    void endSignal();
+	queue<Message> print_queue;
+	std::mutex queue_mutex;
+	std::mutex out_mutex;
 
-    bool run();
+	thread* running_thread;
+
+	void makeMap();
+	map<string, Screen*> screen;
+
+	void toScreen(Message&);
+
+	void print(Message&);
+
+  public:
+	Output();
+	~Output();
+
+	void run();
+	void start();
+	void waitSignal();
+	void runSignal();
+
+	void print(uint, uint, string, string);
+	void printMsgBox(string, string);
+	void printBarGraph(string, double);
+	void printValues(string, map<string, string>);
+
+	static void setSize(uint, uint);
+
+	void endSignal();
+	void waitEnd();
+
+	OutMessage& out(OutMessage out) {
+		out.output = this;
+		return out;
+	}
 };
 
-class Logger{
-private:
-    static string module_name;
+template <class T>
+OutMessage& operator<<(OutMessage& msg, const T& val) {
+	msg.add(val);
+	return msg;
+}
 
-    std::mutex m_ended;
-    std::condition_variable s_ended;
-    bool ended;
 
-    queue<Message> print_queue;
-    std::mutex queue_mutex;
-    thread *running_thread;
+class Input {
+  private:
+	std::mutex end_mutex;
+	bool ended;
 
-    void makeMap();
-    map<string, Screen*> screen;
-public:
-    enum Type {ERROR, INFO, WARNING, DEBUG};
-    Logger();
-    ~Logger();
+  public:
+	Input();
 
-    bool run();
-    void start();
-    void waitSignal();
-    void runSignal();
+	void start();
 
-    void log(string, Type, string);
+	void waitEnter();
+	bool isEnded();
 
-    void endSignal();
-    void waitEnd();
+	void endSignal();
+
+	void run();
 };
 
-namespace io{
-    extern Configs configs;
-    extern Output output;
-    extern Input input;
-    extern Logger logger;
+class Logger {
+  private:
+	static string module_name;
+
+	std::mutex m_ended;
+	std::condition_variable s_ended;
+	bool ended;
+
+	queue<Message> print_queue;
+	std::mutex queue_mutex;
+	thread* running_thread;
+
+	void makeMap();
+	map<string, Screen*> screen;
+
+  public:
+	enum Type { ERROR, INFO, WARNING, DEBUG };
+	Logger();
+	~Logger();
+
+	void run();
+	void start();
+	void waitSignal();
+	void runSignal();
+
+	void log(string, Type, string);
+
+	void endSignal();
+	void waitEnd();
+};
+
+class Jobs {
+  private:
+	std::mutex work_mutex;
+	std::condition_variable work_signal;
+	int works;
+
+	std::mutex m_ended;
+	std::condition_variable s_ended;
+	bool ended;
+
+  public:
+	Jobs();
+
+	void setOK();
+	void waitOK();
+
+	void waitWork();
+	void addWork();
+
+	bool finished();
+	void finish();
+};
+
+namespace io {
+	extern Configs configs;
+	extern Output output;
+	extern Input input;
+	extern Logger logger;
+	extern Jobs jobs;
 }
 
 void run_io();
-
 
 #endif

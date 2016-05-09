@@ -1,57 +1,59 @@
 #ifndef MessegeBox_H
 #define MessegeBox_H
 
-//includes
-#include <iostream>
-#include <string>
-#include <list>
+// includes
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <iostream>
+#include <list>
 #include <stdexcept>
-#include <algorithm>
+#include <string>
 #include <string>
 
-//files
+// files
 #include "BaseTypes.hpp"
 
-//defines
+// defines
 typedef unsigned int uint;
 
-//namespace
+// namespace
 using namespace std;
 
-class MessageBox : public Screen{
-    string name;
-    uint start_x, start_y, size_x, size_y, endx;
+class MessageBox : public Screen {
+	string name;
+	uint start_x, start_y, size_x, size_y, endx;
 
-    list<string> msg_list;
+	list<string> msg_list;
 
-    void add_on_list(string);
-    void printlist();
-public:
-    MessageBox(string, uint, uint, uint, uint, uint);
+	void add_on_list(string);
+	void printlist();
 
-    void print(Message&);
+  public:
+	MessageBox(string, uint, uint, uint, uint, uint);
+
+	void print(Message&);
 };
 
-class ProgressBar : public Screen{
-public:
-    enum DIRECTION {VERTICAL, HORIZONTAL};
+class ProgressBar : public Screen {
+  public:
+	enum DIRECTION { VERTICAL, HORIZONTAL };
 
-private:
-    string name;
-    uint start_x, start_y, size_x, size_y, endx;
+  private:
+	string name;
+	uint start_x, start_y, size_x, size_y, endx;
 
-    double max, min;
-    DIRECTION dir;
+	double max, min;
+	DIRECTION dir;
 
-    void printHorizontalGraph(double porcentage);
-    void printHorizontalGraphArrange();
-public:
+	void printHorizontalGraph(double porcentage);
+	void printHorizontalGraphArrange();
 
-    ProgressBar(string, uint, uint, uint, uint, DIRECTION, double, double, uint);
+  public:
+	ProgressBar(string, uint, uint, uint, uint, DIRECTION, double, double,
+				uint);
 
-    void print(Message&);
+	void print(Message&);
 };
 
 

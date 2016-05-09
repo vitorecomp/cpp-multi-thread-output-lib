@@ -1,42 +1,36 @@
-# Compiled source #
-###################
-*.com
-*.class
-*.dll
-*.exe
+# Compiled Object files
+*.slo
+*.lo
 *.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
 *.so
-*.elf
-*.hex
-*.d
+*.dylib
+*.dll
 
-# Packages #
-############
-# it's better to unpack these files and commit the raw source
-# git has its own built in compression methods
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
+# Fortran module files
+*.mod
 
-# Logs and databases #
-######################
-*.sql
-*.sqlite
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
 
-# OS generated files #
-######################
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Executables
+*.exe
+*.out
+*.app
+*.csv
+*.txt
 
-./output/IOManangerVariables.hpp
-./output_s/IOMananger_Local.cpp
+output/bin
+output/release
+output/dep
+
+.clang-format
