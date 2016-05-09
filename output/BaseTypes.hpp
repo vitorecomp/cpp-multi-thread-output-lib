@@ -17,8 +17,10 @@ class Message {
   public:
 	string box;
 	string msg;
-	uint line, col;
+	uint line, col, type;
+
 	Message(uint, uint, string, string);
+	Message(std::string, uint type, string);
 };
 
 class Screen {

@@ -21,6 +21,11 @@
 // namespace
 using namespace std;
 
+//
+class Output;
+class OutMessage;
+typedef OutMessage Msg;
+
 class Configs : public Variables {
 	std::mutex m_ended;
 	std::condition_variable s_ended;
@@ -44,9 +49,13 @@ class Configs : public Variables {
 
 	// variavles list
 	bool output;
+	bool sync_output;
+
+	bool logging;
+	bool sync_logging;
+	string logname;
 
 	// io
-	bool sync_output;
 	uint windows_cols;
 	uint windows_lines;
 
@@ -57,26 +66,6 @@ class Configs : public Variables {
 	void waitEnd();
 };
 
-class Output;
-
-class OutMessage {
-	string stream;
-
-  public:
-	Output* output;
-	OutMessage(Output*);
-	OutMessage(){};
-	~OutMessage();
-
-	template <class A0>
-	void add(A0& os) {
-		stringstream ss;
-		ss << stream << os;
-		stream = ss.str();
-	}
-};
-
-typedef OutMessage Msg;
 
 class Output {
   private:
@@ -90,14 +79,11 @@ class Output {
 	std::mutex queue_mutex;
 	std::mutex out_mutex;
 
-	thread* running_thread;
-
 	void makeMap();
 	map<string, Screen*> screen;
-
 	void toScreen(Message&);
-
 	void print(Message&);
+	static void setSize(uint, uint);
 
   public:
 	Output();
@@ -107,49 +93,19 @@ class Output {
 	void start();
 	void waitSignal();
 	void runSignal();
+	void endSignal();
+	void waitEnd();
 
 	void print(uint, uint, string, string);
 	void printMsgBox(string, string);
 	void printBarGraph(string, double);
 	void printValues(string, map<string, string>);
-
-	static void setSize(uint, uint);
-
-	void endSignal();
-	void waitEnd();
-
-	OutMessage& out(OutMessage out) {
-		out.output = this;
-		return out;
-	}
-};
-
-template <class T>
-OutMessage& operator<<(OutMessage& msg, const T& val) {
-	msg.add(val);
-	return msg;
-}
-
-
-class Input {
-  private:
-	std::mutex end_mutex;
-	bool ended;
-
-  public:
-	Input();
-
-	void start();
-
-	void waitEnter();
-	bool isEnded();
-
-	void endSignal();
-
-	void run();
 };
 
 class Logger {
+  public:
+	enum TYPE { ERROR = 0, INFO = 1, WARNING = 2, DEBUG = 3, OTHER = 4 };
+
   private:
 	static string module_name;
 
@@ -159,13 +115,23 @@ class Logger {
 
 	queue<Message> print_queue;
 	std::mutex queue_mutex;
+	std::mutex log_mutex;
 	thread* running_thread;
 
 	void makeMap();
 	map<string, Screen*> screen;
 
+	void toFile(Message&);
+	void decision(Message&);
+	void logit(string, string, uint);
+
+	string getTime();
+	string getFileName(TYPE);
+
+	bool type_activated(Message&);
+
+
   public:
-	enum Type { ERROR, INFO, WARNING, DEBUG };
 	Logger();
 	~Logger();
 
@@ -174,11 +140,12 @@ class Logger {
 	void waitSignal();
 	void runSignal();
 
-	void log(string, Type, string);
+	void log(string, TYPE, string);
 
 	void endSignal();
 	void waitEnd();
 };
+
 
 class Jobs {
   private:
@@ -203,12 +170,80 @@ class Jobs {
 	void finish();
 };
 
+class OutMessage {
+	string stream;
+
+
+  public:
+	Logger::TYPE type;
+
+	string name1, name2;
+	double valor;
+
+	bool isOutput, isLog, isGrapth;
+
+	Output* output;
+	Logger* log;
+
+	OutMessage(string name);
+	OutMessage(string name, Logger::TYPE type);
+	OutMessage(string name1, string name2);
+	OutMessage(string name1, string name2, Logger::TYPE type);
+	OutMessage();
+
+	~OutMessage();
+
+	template <class A0>
+	void add(A0& os) {
+		stringstream ss;
+		ss << stream << os;
+		stream = ss.str();
+	}
+};
+
+
+class Input {
+  private:
+	std::mutex end_mutex;
+	bool ended;
+
+  public:
+	Input();
+
+	void start();
+
+	void waitEnter();
+	bool isEnded();
+
+	void endSignal();
+
+	void run();
+};
+
+template <class T>
+OutMessage& operator<<(OutMessage& msg, const T& val) {
+	msg.add(val);
+	return msg;
+}
+
+class Mananger {
+  private:
+	Output* output;
+	Logger* log;
+
+  public:
+	Mananger(Output* output, Logger* logger);
+	OutMessage& out(OutMessage out);
+	OutMessage& out_log(OutMessage out);
+};
+
 namespace io {
 	extern Configs configs;
 	extern Output output;
 	extern Input input;
 	extern Logger logger;
 	extern Jobs jobs;
+	extern Mananger man;
 }
 
 void run_io();

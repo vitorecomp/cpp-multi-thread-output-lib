@@ -27,7 +27,8 @@ int main(int argc, char* argv[]) {
 void run_out() {
 	while (1) {
 		std::thread::id this_id = std::this_thread::get_id();
-		io::output.out(Msg()) << "Printando thread " << this_id << " name";
+		io::man.out(Msg()) << "Printando thread " << this_id << " name";
+		io::man.out_log(Msg()) << "my name is";
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 }

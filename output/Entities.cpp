@@ -158,3 +158,6 @@ void ProgressBar::print(Message &msg) {
 	double percentage = (value - min) / (max - min);
 	printHorizontalGraph(percentage * 100);
 }
+
+
+//////////////

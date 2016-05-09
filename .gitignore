@@ -32,5 +32,9 @@
 output/bin
 output/release
 output/dep
+output/ContextBuild.cpp
+output/ContextVariables.hpp
+
+logs
 
 .clang-format

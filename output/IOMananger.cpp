@@ -75,6 +75,21 @@ void Configs::setConfigs() {
 	else
 		this->sync_output = false;
 
+	if (json["logname"] != Json::nullValue)
+		this->logname = json["logname"].asString();
+	else
+		this->logname = "./logs/logging";
+
+	if (json["logging"] != Json::nullValue)
+		this->logging = json["logging"].asBool();
+	else
+		this->logging = true;
+
+	if (json["sync_logging"] != Json::nullValue)
+		this->sync_logging = json["sync_logging"].asBool();
+	else
+		this->sync_logging = false;
+
 	if (json["windows_cols"] != Json::nullValue)
 		this->windows_cols = json["windows_cols"].asInt();
 	else
@@ -156,6 +171,7 @@ void Output::start() {
 	this->endSignal();
 }
 
+
 void Output::endSignal() {
 	std::unique_lock<std::mutex> lck(m_ended);
 	ended = true;
@@ -199,9 +215,10 @@ void Output::print(Message &message) {
 
 	if (io::configs.sync_output) {
 		io::jobs.waitOK();
-		std::unique_lock<std::mutex> lck(m_ended);
+		std::unique_lock<std::mutex> lck(out_mutex);
 		this->toScreen(message);
 	} else {
+		io::jobs.addWork();
 		queue_mutex.lock();
 		this->print_queue.push(message);
 		queue_mutex.unlock();
@@ -211,7 +228,6 @@ void Output::print(Message &message) {
 void Output::printMsgBox(string box, string msg) {
 	Message message(0, 0, box, msg);
 	this->print(message);
-	io::jobs.addWork();
 }
 
 void Output::printBarGraph(string box, double value) {
@@ -219,7 +235,6 @@ void Output::printBarGraph(string box, double value) {
 	msg << value;
 	Message message(0, 0, box, msg.str());
 	this->print(message);
-	io::jobs.addWork();
 }
 
 void Output::printValues(string box, map<string, string>) {
@@ -280,6 +295,12 @@ Logger::~Logger() {
 
 void Logger::start() {
 	makeMap();
+	stringstream ss;
+	std::size_t pos = io::configs.logname.find_last_of("/");
+	std::string str3 = io::configs.logname.substr(0, pos);
+
+	ss << "mkdir -p " << str3;
+	system(ss.str().c_str());
 	this->endSignal();
 }
 
@@ -307,23 +328,87 @@ void Logger::run() {
 	print_queue.pop();
 
 	queue_mutex.unlock();
+	this->toFile(message);
+}
 
-	if (screen.find(message.box) != screen.end()) {
-		this->screen[message.box]->print(message);
-	} else {
-		stringstream ss;
-		ss << "Mapa de logger não encontrado: " << message.box;
-		io::logger.log(module_name, Logger::ERROR, ss.str());
+void Logger::toFile(Message &message) {
+	try {
+		this->logit(message.box, message.msg, message.type);
+	} catch (...) {
+		try {
+			stringstream ss;
+			ss << "Error ao logar: " << message.box;
+			this->logit(module_name, ss.str(), OTHER);
+		} catch (...) {
+		}
 	}
 }
 
-void Logger::log(string box, Type, string msg) {
-	queue_mutex.lock();
-	io::jobs.addWork();
-	// this->print_queue.push(message);
-	queue_mutex.unlock();
+string Logger::getFileName(Logger::TYPE type) {
+	switch (type) {
+		case Logger::DEBUG:
+			return io::configs.logname + "-debug.log";
+		case Logger::INFO:
+			return io::configs.logname + "-info.log";
+		case Logger::ERROR:
+			return io::configs.logname + "-error.log";
+		case Logger::WARNING:
+			return io::configs.logname + "-warning.log";
+	}
+	return io::configs.logname + ".log";
 }
 
+string Logger::getTime() {
+	return "----------------";
+}
+
+void Logger::logit(string module, string msg, uint type) {
+	ofstream myfile;
+	string filename = this->getFileName((Logger::TYPE)type);
+
+	myfile.open(filename, ios::app);
+
+	stringstream ss;
+	ss << this->getTime() << ";" << module << ";" << msg << endl;
+
+	if (myfile.is_open())
+		myfile << ss.str();
+	else
+		throw invalid_argument("Error ao abrir o arquivo");
+	myfile.close();
+}
+
+bool Logger::type_activated(Message &) {
+	// TODO fazer isso
+	return true;
+}
+
+void Logger::decision(Message &message) {
+	if (!io::configs.logging)
+		return;
+	if (!this->type_activated(message))
+		return;
+
+	if (io::configs.sync_logging) {
+		io::jobs.waitOK();
+		std::unique_lock<std::mutex> lck(log_mutex);
+		this->toFile(message);
+	} else {
+		io::jobs.addWork();
+		std::unique_lock<std::mutex> lck(queue_mutex);
+		this->print_queue.push(message);
+	}
+}
+
+void Logger::log(string file, TYPE type, string msg) {
+	Message message(file, type, msg);
+	this->decision(message);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Jobs
+//
+///////////////////////////////////////////////////////////////////////////////
 
 Jobs io::jobs;
 
@@ -363,11 +448,81 @@ bool Jobs::finished() {
 	return false;
 }
 
-
-OutMessage::OutMessage(Output *output) {
-	this->output = output;
+///////////////////////////////////////////////////////////////////////////////
+// OutMessage
+//
+///////////////////////////////////////////////////////////////////////////////
+OutMessage::OutMessage(string name) {
+	OutMessage();
+	this->name1 = name;
 }
 
+OutMessage::OutMessage(string name, Logger::TYPE type) {
+	OutMessage();
+	this->name2 = name;
+	this->type = type;
+}
+
+OutMessage::OutMessage(string name1, string name2) {
+	OutMessage();
+	this->name1 = name1;
+	this->name2 = name2;
+}
+
+OutMessage::OutMessage(string name1, string name2, Logger::TYPE type) {
+	OutMessage();
+	this->name1 = name1;
+	this->name2 = name2;
+	this->type = type;
+}
+
+OutMessage::OutMessage() {
+	this->isLog = false;
+	this->isOutput = false;
+	this->isGrapth = false;
+
+	this->output = NULL;
+	this->log = NULL;
+
+	this->type = Logger::INFO;
+
+	this->name1 = "main_messages";
+	this->name2 = "main_log";
+	this->stream = "";
+}
+
+
 OutMessage::~OutMessage() {
-	this->output->printMsgBox("main_messages", stream);
+	if (isOutput)
+		this->output->printMsgBox(name1, stream);
+
+	if (isLog)
+		this->log->log(name2, type, stream);
+
+	if (isGrapth)
+		this->output->printBarGraph(name1, valor);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Mananger
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Mananger io::man = Mananger(&io::output, &io::logger);
+
+Mananger::Mananger(Output *output, Logger *logger) {
+	this->output = output;
+	this->log = logger;
+}
+
+OutMessage &Mananger::out(OutMessage out) {
+	out.output = output;
+	out.isOutput = true;
+}
+
+OutMessage &Mananger::out_log(OutMessage out) {
+	out.output = this->output;
+	out.log = this->log;
+	out.isOutput = true;
+	out.isLog = true;
 }

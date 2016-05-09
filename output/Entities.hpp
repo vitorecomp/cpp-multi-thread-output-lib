@@ -7,15 +7,19 @@
 #include <iomanip>
 #include <iostream>
 #include <list>
+#include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string>
+#include <vector>
 
 // files
 #include "BaseTypes.hpp"
 
 // defines
 typedef unsigned int uint;
+typedef vector<map<string, string>> arguments;
 
 // namespace
 using namespace std;

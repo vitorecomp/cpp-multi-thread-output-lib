@@ -7,6 +7,13 @@ Message::Message(uint line, uint col, string box, string msg) {
 	this->msg = msg;
 }
 
+Message::Message(string file, uint type, string msg) {
+	this->box = file;
+	this->type = type;
+	this->msg = msg;
+}
+
+
 void Box::draw(uint start_x, uint start_y, uint size_x, uint size_y) {
 	move(start_x, start_y);
 	for (uint i = 0; i <= size_y; i++)
