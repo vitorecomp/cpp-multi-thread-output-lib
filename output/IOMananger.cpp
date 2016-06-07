@@ -513,11 +513,13 @@ Mananger io::man = Mananger(&io::output, &io::logger);
 Mananger::Mananger(Output *output, Logger *logger) {
 	this->output = output;
 	this->log = logger;
+	return out;
 }
 
 OutMessage &Mananger::out(OutMessage out) {
 	out.output = output;
 	out.isOutput = true;
+	return out;
 }
 
 OutMessage &Mananger::out_log(OutMessage out) {
