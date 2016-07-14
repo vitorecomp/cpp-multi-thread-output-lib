@@ -517,7 +517,6 @@ Mananger io::man = Mananger(&io::output, &io::logger);
 Mananger::Mananger(Output *output, Logger *logger) {
 	this->output = output;
 	this->log = logger;
-	
 }
 
 OutMessage &Mananger::out(OutMessage out) {
