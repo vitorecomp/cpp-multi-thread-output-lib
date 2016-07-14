@@ -414,6 +414,7 @@ Jobs io::jobs;
 
 Jobs::Jobs() {
 	this->works = 0;
+	is_online = true;
 }
 
 void Jobs::waitOK() {
@@ -442,10 +443,13 @@ void Jobs::addWork() {
 }
 
 void Jobs::finish() {
+	std::unique_lock<std::mutex> lck(finish_mutex);
+	is_online = true;
 }
 
 bool Jobs::finished() {
-	return false;
+	std::unique_lock<std::mutex> lck(finish_mutex);
+	return !is_online;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -513,7 +517,7 @@ Mananger io::man = Mananger(&io::output, &io::logger);
 Mananger::Mananger(Output *output, Logger *logger) {
 	this->output = output;
 	this->log = logger;
-	return out;
+	
 }
 
 OutMessage &Mananger::out(OutMessage out) {
@@ -527,4 +531,5 @@ OutMessage &Mananger::out_log(OutMessage out) {
 	out.log = this->log;
 	out.isOutput = true;
 	out.isLog = true;
+	return out;
 }

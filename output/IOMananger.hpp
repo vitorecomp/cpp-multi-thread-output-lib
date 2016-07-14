@@ -156,6 +156,9 @@ class Jobs {
 	std::mutex m_ended;
 	std::condition_variable s_ended;
 	bool ended;
+	
+	std::mutex finish_mutex;
+	bool is_online;
 
   public:
 	Jobs();

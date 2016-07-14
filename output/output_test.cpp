@@ -14,10 +14,10 @@ int main(int argc, char* argv[]) {
 
 	thread io_th(run_io);
 
-	std::vector<thread> threads;
+	// std::vector<thread> threads;
 
-	for (int i = 0; i < 1; i++)
-		threads.push_back(thread(run_out));
+	// for (int i = 0; i < 1; i++)
+	// 	threads.push_back(thread(run_out));
 
 	while (1)
 		std::this_thread::sleep_for(std::chrono::seconds(50));
