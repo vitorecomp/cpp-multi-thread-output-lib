@@ -19,7 +19,7 @@ OBJ = $(patsubst %,$(BIN_PATH)/%,$(_OBJ))
 DIRECTIVES = -std=c++11 -w -c -I $(HEADER_PATH)
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_PATH)/$*.Td
 OPENCV = `pkg-config --libs opencv` -O4
-LIBS =
+LIBS = -pthread
 
 RELEASE_NAME = output_test
 

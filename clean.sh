@@ -6,3 +6,4 @@ rm .clang-format
 rm ./output/ContextBuild_t.cpp
 rm ./output/ContextVariables_t.hpp
 rm ./output/output_test.cpp
+rm .clang-format

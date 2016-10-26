@@ -53,6 +53,8 @@ class Configs : public Variables {
 
 	bool logging;
 	bool sync_logging;
+	bool set_size;
+
 	string logname;
 
 	// io
@@ -83,7 +85,7 @@ class Output {
 	map<string, Screen*> screen;
 	void toScreen(Message&);
 	void print(Message&);
-	static void setSize(uint, uint);
+	static void setSize(uint, uint, bool);
 
   public:
 	Output();
@@ -149,6 +151,10 @@ class Logger {
 
 class Jobs {
   private:
+	std::mutex m_ok;
+	std::condition_variable s_ok;
+	bool ok;
+
 	std::mutex work_mutex;
 	std::condition_variable work_signal;
 	int works;
@@ -156,9 +162,6 @@ class Jobs {
 	std::mutex m_ended;
 	std::condition_variable s_ended;
 	bool ended;
-	
-	std::mutex finish_mutex;
-	bool is_online;
 
   public:
 	Jobs();
@@ -171,13 +174,16 @@ class Jobs {
 
 	bool finished();
 	void finish();
+
+	void waitFinish();
 };
 
 class OutMessage {
 	string stream;
 
-
   public:
+	void flush();
+
 	Logger::TYPE type;
 
 	string name1, name2;
@@ -223,11 +229,6 @@ class Input {
 	void run();
 };
 
-template <class T>
-OutMessage& operator<<(OutMessage& msg, const T& val) {
-	msg.add(val);
-	return msg;
-}
 
 class Mananger {
   private:
@@ -236,8 +237,8 @@ class Mananger {
 
   public:
 	Mananger(Output* output, Logger* logger);
-	OutMessage& out(OutMessage out);
-	OutMessage& out_log(OutMessage out);
+	OutMessage out(OutMessage out);
+	OutMessage out_log(OutMessage out);
 };
 
 namespace io {
@@ -250,5 +251,42 @@ namespace io {
 }
 
 void run_io();
+
+class MsgInter {
+  public:
+	bool toPrint;
+	OutMessage& msg;
+	void setNotPrint();
+	MsgInter(OutMessage& msg);
+	~MsgInter();
+};
+
+template <class T>
+MsgInter operator<<(OutMessage msg, const T& val) {
+	msg.add(val);
+	return MsgInter(msg);
+}
+
+template <class E>
+MsgInter operator<<(MsgInter msg, const E& val) {
+	msg.msg.add(val);
+	msg.toPrint = false;
+	return MsgInter(msg.msg);
+}
+
+
+inline OutMessage Mananger::out(OutMessage out) {
+	out.output = output;
+	out.isOutput = true;
+	return out;
+}
+
+inline OutMessage Mananger::out_log(OutMessage out) {
+	out.output = this->output;
+	out.log = this->log;
+	out.isOutput = true;
+	out.isLog = true;
+	return out;
+}
 
 #endif

@@ -73,7 +73,7 @@ void Configs::setConfigs() {
 	if (json["sync_output"] != Json::nullValue)
 		this->sync_output = json["sync_output"].asBool();
 	else
-		this->sync_output = false;
+		this->sync_output = true;
 
 	if (json["logname"] != Json::nullValue)
 		this->logname = json["logname"].asString();
@@ -89,6 +89,11 @@ void Configs::setConfigs() {
 		this->sync_logging = json["sync_logging"].asBool();
 	else
 		this->sync_logging = false;
+
+	if (json["set_size"] != Json::nullValue)
+		this->set_size = json["sync_logging"].asBool();
+	else
+		this->set_size = true;
 
 	if (json["windows_cols"] != Json::nullValue)
 		this->windows_cols = json["windows_cols"].asInt();
@@ -155,7 +160,9 @@ Output::~Output() {
 	}
 }
 
-void Output::setSize(uint ncols, uint nlines) {
+void Output::setSize(uint ncols, uint nlines, bool set_size) {
+	if (!set_size)
+		return;
 	stringstream ss;
 	ss << "echo -ne "
 	   << "'"
@@ -165,7 +172,8 @@ void Output::setSize(uint ncols, uint nlines) {
 }
 
 void Output::start() {
-	Output::setSize(io::configs.windows_cols, io::configs.windows_lines);
+	Output::setSize(io::configs.windows_cols, io::configs.windows_lines,
+					io::configs.set_size);
 	Figure::clearAll();
 	makeMap();
 	this->endSignal();
@@ -354,6 +362,8 @@ string Logger::getFileName(Logger::TYPE type) {
 			return io::configs.logname + "-error.log";
 		case Logger::WARNING:
 			return io::configs.logname + "-warning.log";
+		case Logger::OTHER:
+			return io::configs.logname + "-other.log";
 	}
 	return io::configs.logname + ".log";
 }
@@ -414,19 +424,20 @@ Jobs io::jobs;
 
 Jobs::Jobs() {
 	this->works = 0;
-	is_online = true;
+	this->ok = false;
+	this->ended = false;
 }
 
 void Jobs::waitOK() {
-	std::unique_lock<std::mutex> lck(m_ended);
-	while (!ended)
-		s_ended.wait(lck);
+	std::unique_lock<std::mutex> lck(m_ok);
+	while (!ok)
+		s_ok.wait(lck);
 }
 
 void Jobs::setOK() {
-	std::unique_lock<std::mutex> lck(m_ended);
-	ended = true;
-	s_ended.notify_all();
+	std::unique_lock<std::mutex> lck(m_ok);
+	ok = true;
+	s_ok.notify_all();
 }
 
 void Jobs::waitWork() {
@@ -443,13 +454,20 @@ void Jobs::addWork() {
 }
 
 void Jobs::finish() {
-	std::unique_lock<std::mutex> lck(finish_mutex);
-	is_online = true;
+	std::unique_lock<std::mutex> lck(m_ended);
+	ended = true;
+	s_ended.notify_all();
 }
 
 bool Jobs::finished() {
-	std::unique_lock<std::mutex> lck(finish_mutex);
-	return !is_online;
+	std::unique_lock<std::mutex> lck(m_ended);
+	return ended;
+}
+
+void Jobs::waitFinish() {
+	std::unique_lock<std::mutex> lck(m_ended);
+	while (!ended)
+		s_ended.wait(lck);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -497,6 +515,10 @@ OutMessage::OutMessage() {
 
 
 OutMessage::~OutMessage() {
+	// this->flush();
+}
+
+void OutMessage::flush() {
 	if (isOutput)
 		this->output->printMsgBox(name1, stream);
 
@@ -506,6 +528,16 @@ OutMessage::~OutMessage() {
 	if (isGrapth)
 		this->output->printBarGraph(name1, valor);
 }
+
+MsgInter::MsgInter(OutMessage &msg) : msg(msg) {
+	this->toPrint = true;
+}
+
+MsgInter::~MsgInter() {
+	if (this->toPrint)
+		this->msg.flush();
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mananger
@@ -517,18 +549,4 @@ Mananger io::man = Mananger(&io::output, &io::logger);
 Mananger::Mananger(Output *output, Logger *logger) {
 	this->output = output;
 	this->log = logger;
-}
-
-OutMessage &Mananger::out(OutMessage out) {
-	out.output = output;
-	out.isOutput = true;
-	return out;
-}
-
-OutMessage &Mananger::out_log(OutMessage out) {
-	out.output = this->output;
-	out.log = this->log;
-	out.isOutput = true;
-	out.isLog = true;
-	return out;
 }

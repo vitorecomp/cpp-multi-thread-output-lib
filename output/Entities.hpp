@@ -11,7 +11,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <string>
 #include <vector>
 
 // files
@@ -57,6 +56,12 @@ class ProgressBar : public Screen {
 	ProgressBar(string, uint, uint, uint, uint, DIRECTION, double, double,
 				uint);
 
+	void print(Message&);
+};
+
+class Terminal : public Screen {
+  public:
+	Terminal();
 	void print(Message&);
 };
 

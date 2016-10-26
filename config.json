@@ -1,3 +1,4 @@
 {
-	"sync_output":true
+	"sync_output":true,
+	"set_size":true
 }
